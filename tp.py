@@ -36,29 +36,38 @@ class Node:
 
 class KdTree:
   def __init__(self, points, depth = 0) -> None:
-    self.root = self.build_tree(list(points), depth)
+    self.root, self.len = self.build_tree(list(points), depth)
+
+  def __len__(self) -> int:
+    return self.len
      
-  def build_tree(self, points, depth) -> Node | None:
+  def build_tree(self, points, depth) -> tuple[Node | None, int]:
     if not points:
-      return None
+      return None, 0
 
     k = 2
     axis = depth % k
      
     if axis == 0:
       points.sort(key = lambda p : p.x)
+
     else:
       points.sort(key = lambda p : p.y)
 
     median_index = len(points) // 2
     median = points[median_index]
+
+    left_node, left_len = self.build_tree(points[ : median_index], depth + 1)
+    right_node, right_len = self.build_tree(points[median_index + 1 : ], depth + 1)
      
-    return Node(
+    node = Node(
       median,
       axis,
-      left = self.build_tree(points[ : median_index], depth + 1),
-      right = self.build_tree(points[median_index + 1 : ], depth + 1),
+      left = left_node,
+      right = right_node,
     )
+
+    return node, left_len + right_len + 1
 
   def search(self, search_area) -> list[Point]:
     in_range = []
@@ -94,13 +103,12 @@ def parse_csv(path):
   columns = file[0]
   rows = file[1 : ]
 
-  idx_cnae = columns.index('CNAE_PRINCIPAL')
   idx_desc = columns.index('DESCRICAO_CNAE_PRINCIPAL')
 
   descs = set()
 
   for row in rows:
-    if len(row) > max(idx_cnae, idx_desc):
+    if len(row) > idx_desc:
       descs.add(row[idx_desc].strip())
 
   descs = sorted(descs)
@@ -127,13 +135,15 @@ def main():
   points = parse_csv('dados.csv')
   tree = KdTree(points)
 
-  center_x, center_y = 604468, 7792708
-  delta = 250  # search within ±50 meters
+  # teste
+  center_x, center_y = 604468.0, 7792708.0
+  delta = 250 
 
   p1 = Point(None, center_x - delta, center_y - delta)
   p2 = Point(None, center_x + delta, center_y + delta)
   area = Rectangle(p1, p2)
   print(tree.search(area))
+  print(len(tree))
 
 if __name__ == "__main__":
     main()
