@@ -1,3 +1,6 @@
+import csv
+import re
+
 # classe pra guardar as informaçoes de cada estabelecimento
 class Info:
   def __init__(self, date, address, name) -> None:
@@ -81,17 +84,55 @@ class KdTree:
     search_recursive(self.root)
     return in_range
 
-def main():
-  # teste
-  points = [
-    Point(None, 0, 0),
-    Point(None, 10, 0),
-    Point(None, 0, 10),
-    Point(None, 10, 10),
-  ]
+def read_csv(path):
+  with open(path, 'r') as file:
+    return list(csv.reader(file, delimiter = ';'))
 
+def parse_csv(path):
+  file = read_csv(path)
+
+  columns = file[0]
+  rows = file[1 : ]
+
+  idx_cnae = columns.index('CNAE_PRINCIPAL')
+  idx_desc = columns.index('DESCRICAO_CNAE_PRINCIPAL')
+
+  descs = set()
+
+  for row in rows:
+    if len(row) > max(idx_cnae, idx_desc):
+      descs.add(row[idx_desc].strip())
+
+  descs = sorted(descs)
+
+  keywords = re.compile(r'\b(RESTAURANTE|RESTAURANTES|BAR|BARES|BEBIDA|BEBIDAS)\b', re.IGNORECASE)
+
+  filtered_desc = [desc for desc in descs if keywords.search(desc)]
+  filtered_desc = [filtered_desc[0], filtered_desc[1], filtered_desc[11]]
+
+  filtered_rows = [row for row in rows if row[idx_desc] in filtered_desc]
+  
+  points = []
+
+  for row in filtered_rows:
+    match = re.search(r'\((.*?)\)', row[-1])
+    coords = match.group(1)
+    point = coords.split(' ')
+    x, y = float(point[0]), float(point[1])
+    points.append(Point(row[ : -1], x, y))
+
+  return points
+    
+def main():
+  points = parse_csv('dados.csv')
   tree = KdTree(points)
-  area = Rectangle(Point(None, 0, 0), Point(None, 15, 5))
+
+  center_x, center_y = 604468, 7792708
+  delta = 250  # search within ±50 meters
+
+  p1 = Point(None, center_x - delta, center_y - delta)
+  p2 = Point(None, center_x + delta, center_y + delta)
+  area = Rectangle(p1, p2)
   print(tree.search(area))
 
 if __name__ == "__main__":
