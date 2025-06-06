@@ -1,5 +1,4 @@
 import csv
-import re
 
 # classe pra guardar as informaçoes de cada estabelecimento
 class Info:
@@ -103,26 +102,9 @@ def parse_csv(path):
   columns = file[0]
   rows = file[1 : ]
 
-  idx_desc = columns.index('DESCRICAO_CNAE_PRINCIPAL')
-
-  descs = set()
-
-  for row in rows:
-    if len(row) > idx_desc:
-      descs.add(row[idx_desc].strip())
-
-  descs = sorted(descs)
-
-  keywords = re.compile(r'\b(RESTAURANTE|RESTAURANTES|BAR|BARES|BEBIDA|BEBIDAS)\b', re.IGNORECASE)
-
-  filtered_desc = [desc for desc in descs if keywords.search(desc)]
-  filtered_desc = [filtered_desc[0], filtered_desc[1], filtered_desc[11]]
-
-  filtered_rows = [row for row in rows if row[idx_desc] in filtered_desc]
-  
   points = []
 
-  for row in filtered_rows:
+  for row in rows:
     match = re.search(r'\((.*?)\)', row[-1])
     coords = match.group(1)
     point = coords.split(' ')
