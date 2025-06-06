@@ -1,4 +1,6 @@
 import csv
+import numpy as np
+import re
 
 # classe pra guardar as informaçoes de cada estabelecimento
 class Info:
@@ -10,21 +12,29 @@ class Info:
 class Point:
   def __init__(self, data, x = 0.0, y = 0.0) -> None:
     self.data = data
-    self.x = x
-    self.y = y
+    self.point = np.array([x, y], dtype = np.float64)
 
-  def __repr__(self):
-    return f"(x = {self.x}, y = {self.y})"
+  @property
+  def x(self) -> float:
+    return self.point[0]
+  
+  @property
+  def y(self) -> float:
+    return self.point[1]
+
+  def __repr__(self) -> str:
+    return f"(x = {self.x:.2f}, y = {self.y:.2f})"
 
 class Rectangle:
   def __init__(self, p1, p2) -> None:
-    self.ll = Point(None, min(p1.x, p2.x), min(p1.y, p2.y))
-    self.ur = Point(None, max(p1.x, p2.x), max(p1.y, p2.y))
-    self.w = abs(p2.x - p1.x)
-    self.h = abs(p2.y - p1.y)
+    self.ll = np.array([min(p1.x, p2.x), min(p1.y, p2.y)], dtype = np.float64)
+    self.ur = np.array([max(p1.x, p2.x), max(p1.y, p2.y)], dtype = np.float64)
 
   def contains(self, p) -> bool:
-    return self.ll.x <= p.x <= self.ur.x and self.ll.y <= p.y <= self.ur.y
+    return self.ll[0] <= p.x <= self.ur[0] and self.ll[1] <= p.y <= self.ur[1]
+
+  def intersect_axis(self, p, axis) -> tuple[bool, bool]:
+    return self.ll[axis] <= p, self.ur[axis] >= p
 
 class Node:
   def __init__(self, point, axis, left = None, right = None) -> None:
@@ -32,6 +42,7 @@ class Node:
     self.axis = axis
     self.left = left
     self.right = right
+    self.split = point.point[axis]
 
 class KdTree:
   def __init__(self, points, depth = 0) -> None:
@@ -47,61 +58,48 @@ class KdTree:
     k = 2
     axis = depth % k
      
-    if axis == 0:
-      points.sort(key = lambda p : p.x)
+    coords = np.array([p.point[axis] for p in points])
+    median_idx = len(points) // 2
 
-    else:
-      points.sort(key = lambda p : p.y)
+    partition_idxs = np.argpartition(coords, median_idx)
+    points = [points[i] for i in partition_idxs]
+    median = points[median_idx]
 
-    median_index = len(points) // 2
-    median = points[median_index]
-
-    left_node, left_len = self.build_tree(points[ : median_index], depth + 1)
-    right_node, right_len = self.build_tree(points[median_index + 1 : ], depth + 1)
-     
-    node = Node(
-      median,
-      axis,
-      left = left_node,
-      right = right_node,
-    )
+    left_node, left_len = self.build_tree(points[ : median_idx], depth + 1)
+    right_node, right_len = self.build_tree(points[median_idx + 1 : ], depth + 1)
+    node = Node(median, axis, left = left_node, right = right_node)
 
     return node, left_len + right_len + 1
 
   def search(self, search_area) -> list[Point]:
     in_range = []
 
-    def search_recursive(node):
+    def search_recursive(node) -> None:
       if node is None:
         return
 
       if search_area.contains(node.point):
         in_range.append(node.point)
 
-      if node.axis == 0:
-        if search_area.ll.x <= node.point.x:
-          search_recursive(node.left)
-        if search_area.ur.x >= node.point.x:
-          search_recursive(node.right)
-      else:
-        if search_area.ll.y <= node.point.y:
-          search_recursive(node.left)
-        if search_area.ur.y >= node.point.y:
-          search_recursive(node.right)
+      left_intersect, right_intersect = search_area.intersect_axis(node.split, node.axis)
+
+      if left_intersect:
+        search_recursive(node.left)
+
+      if right_intersect:
+        search_recursive(node.right)
 
     search_recursive(self.root)
     return in_range
 
-def read_csv(path):
+def read_csv(path) -> list[list[str]]:
   with open(path, 'r') as file:
     return list(csv.reader(file, delimiter = ';'))
 
-def parse_csv(path):
+def parse_csv(path) -> list[Point]:
   file = read_csv(path)
-
-  columns = file[0]
+  
   rows = file[1 : ]
-
   points = []
 
   for row in rows:
@@ -114,7 +112,7 @@ def parse_csv(path):
   return points
     
 def main():
-  points = parse_csv('dados.csv')
+  points = np.array(parse_csv('dados.csv'))
   tree = KdTree(points)
 
   # teste
