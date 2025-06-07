@@ -1,25 +1,31 @@
 import dash
 from dash import html, Output, Input, dash_table
 import dash_leaflet as dl
+import tp
 
-# Exemplo
-points = [
-    {"name": "Point A", "lat": 40.7128, "lon": -74.0060, "info": "New York"},
-    {"name": "Point B", "lat": 34.0522, "lon": -118.2437, "info": "Los Angeles"},
-    {"name": "Point C", "lat": 41.8781, "lon": -87.6298, "info": "Chicago"},
-    {"name": "Point D", "lat": 47.6062, "lon": -122.3321, "info": "Seattle"},
-]
+points = tp.parse_csv('dados.csv')
+tree = tp.KdTree(points)
+center_x, center_y = (-19.9062135,-43.9650108)
+points = []
+
+def point_to_dict(p):
+    return {
+        "name": p.data.name,
+        "date": p.data.date,
+        "has_license": "Sim" if p.data.has_license else "Não" if p.data.has_license is not None else "",
+        "addr": p.data.address
+    }
 
 app = dash.Dash(__name__)
 
 def make_markers(data):
     return [
-        dl.Marker(position=(p["lat"], p["lon"]), children=dl.Tooltip(p["name"]))
+        dl.Marker(position=(p.y, p.x), children=dl.Tooltip(p.data.name))
         for p in data
     ]
 
 app.layout = html.Div([
-    dl.Map(center=(39, -98), zoom=4, children=[
+    dl.Map(center=(center_x, center_y), zoom=13, children=[
         dl.TileLayer(),
         dl.LayerGroup(id="marker-layer", children=make_markers(points)),
         dl.FeatureGroup([
@@ -37,12 +43,12 @@ app.layout = html.Div([
     dash_table.DataTable(
         id='points-table',
         columns=[
-            {"name": "Name", "id": "name"},
-            {"name": "Latitude", "id": "lat"},
-            {"name": "Longitude", "id": "lon"},
-            {"name": "Info", "id": "info"}
+            {"name": "Nome", "id": "name"},
+            {"name": "Data de início", "id": "date"},
+            {"name": "Possui alvará", "id": "has_license"},
+            {"name": "Endereço", "id": "addr"}
         ],
-        data=points,
+        data=[point_to_dict(p) for p in points],
         style_table={'overflowX': 'auto'},
         style_cell={'textAlign': 'left', 'padding': '5px'},
         style_header={'backgroundColor': 'lightgrey', 'fontWeight': 'bold'}
@@ -65,12 +71,11 @@ def filter_points(geojson):
     lon_min, lon_max = min(lons), max(lons)
 
     # Trocar filtro abaixo - consultar kdtree
-    filtered = [
-        p for p in points
-        if lat_min <= p["lat"] <= lat_max and lon_min <= p["lon"] <= lon_max
-    ]
+    ll = tp.Point(None, lon_min, lat_min)
+    ur = tp.Point(None, lon_max, lat_max)
+    filtered = tree.search(tp.Rectangle(ll, ur))
 
-    return filtered, make_markers(filtered)
+    return [point_to_dict(p) for p in filtered], make_markers(filtered)
 
 if __name__ == '__main__':
     app.run(debug=True)

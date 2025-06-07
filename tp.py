@@ -1,13 +1,18 @@
 import csv
 import numpy as np
 import re
+from pyproj import Transformer
+
+transformer = Transformer.from_crs("EPSG:32723", "EPSG:4326", always_xy=True)
 
 # classe pra guardar as informaçoes de cada estabelecimento
 class Info:
-  def __init__(self, date, address, name) -> None:
+  def __init__(self, date, address, name, ficname, has_license) -> None:
     self.date = date
     self.address = address
     self.name = name
+    self.ficname = ficname
+    self.has_license = has_license
 
 class Point:
   def __init__(self, data, x = 0.0, y = 0.0) -> None:
@@ -93,31 +98,58 @@ class KdTree:
     return in_range
 
 def read_csv(path) -> list[list[str]]:
-  with open(path, 'r') as file:
+  with open(path, 'r', encoding='UTF-8') as file:
     return list(csv.reader(file, delimiter = ';'))
 
 def parse_csv(path) -> list[Point]:
   file = read_csv(path)
   
   rows = file[1 : ]
+  columns = file[0]
+  
+  name_idx = columns.index('NOME')
+  ficname_idx = columns.index('NOME_FANTASIA')
+  has_license_idx = columns.index('IND_POSSUI_ALVARA')
+  date_idx = columns.index('DATA_INICIO_ATIVIDADE')
+  addres_desc_idx = columns.index('DESC_LOGRADOURO')
+  addres_name_idx = columns.index('NOME_LOGRADOURO')
+  addres_number_idx = columns.index('NUMERO_IMOVEL')
+  addres_comp_idx = columns.index('COMPLEMENTO')
+  addres_neigh_idx = columns.index('NOME_BAIRRO')
+  
   points = []
 
   for row in rows:
     match = re.search(r'\((.*?)\)', row[-1])
     coords = match.group(1)
     point = coords.split(' ')
-    x, y = float(point[0]), float(point[1])
-    points.append(Point(row[ : -1], x, y))
+    x, y = transformer.transform(float(point[0]), float(point[1]))
+    # print(x, y)
+    
+    address = (f'{row[addres_desc_idx]} {row[addres_name_idx]}, {row[addres_number_idx]},'
+               f'{' ' + row[addres_comp_idx] + ',' if row[addres_comp_idx] else ''} {row[addres_neigh_idx]}')
+    ficname = row[ficname_idx] if row[ficname_idx] else None
+    has_license = True
+    if row[has_license_idx] == 'SIM':
+      has_license = True
+    elif row[has_license_idx] == 'NÃO':
+      has_license = False
+    else:
+      has_license = None
+      
+    info = Info(row[date_idx], address, row[name_idx], ficname, has_license)
+    points.append(Point(info, x, y))
 
   return points
-    
+
 def main():
-  points = np.array(parse_csv('dados.csv'))
+  points = parse_csv('dados.csv')
   tree = KdTree(points)
 
   # teste
-  center_x, center_y = 604468.0, 7792708.0
-  delta = 250 
+  center_x, center_y = (41.11038220842008, -35.0718454193354)
+  print(center_x, center_y)
+  delta = 0.5
 
   p1 = Point(None, center_x - delta, center_y - delta)
   p2 = Point(None, center_x + delta, center_y + delta)
