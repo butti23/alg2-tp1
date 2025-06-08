@@ -128,7 +128,7 @@ def parse_csv(path):
     x, y = transformer.transform(float(point[0]), float(point[1]))
 
     address = (f'{row[addres_desc_idx]} {row[addres_name_idx]}, {row[addres_number_idx]},'
-      f'{' ' + row[addres_comp_idx] + ',' if row[addres_comp_idx] else ''} {row[addres_neigh_idx]}')
+      f"{' ' + row[addres_comp_idx] + ',' if row[addres_comp_idx] else ''} {row[addres_neigh_idx]}")
     ficname = row[ficname_idx] if row[ficname_idx] else None
     has_license = True
     if row[has_license_idx] == 'SIM':
