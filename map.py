@@ -104,4 +104,4 @@ def filter_points(geojson):
   return [point_to_dict(p) for p in filtered], make_markers(filtered)
 
 if __name__ == '__main__':
-  app.run()
+  app.run(host = '0.0.0.0')
