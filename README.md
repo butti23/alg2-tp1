@@ -13,7 +13,7 @@ Este projeto é uma aplicação web interativa para visualização, busca e filt
 ## Estrutura do Projeto
 ```text
 ├── map.py               # Aplicação principal Dash (frontend e backend)
-├── tp.py                # Lógica de dados, estruturas e busca espacial
+├── kdtree.py            # Lógica de dados, estruturas e busca espacial
 ├── dados.csv            # Dados dos estabelecimentos (geolocalização, CNPJ, etc)
 ├── bares.csv            # Dados detalhados dos bares do Comida di Buteco
 ├── output.csv           # (opcional) Saídas processadas
