@@ -7,12 +7,13 @@ transformer = Transformer.from_crs("EPSG:32723", "EPSG:4326", always_xy=True)
 
 # classe pra guardar as informaçoes de cada estabelecimento
 class Info:
-  def __init__(self, date, address, name, ficname, has_license) -> None:
+  def __init__(self, date, address, name, ficname, has_license, id_ativ_econ_estabelecimento=None) -> None:
     self.date = date
     self.address = address
     self.name = name
     self.ficname = ficname
     self.has_license = has_license
+    self.id_ativ_econ_estabelecimento = id_ativ_econ_estabelecimento
 
 class Point:
   def __init__(self, data, x = 0.0, y = 0.0) -> None:
@@ -116,6 +117,7 @@ def parse_csv(path) -> list[Point]:
   addres_number_idx = columns.index('NUMERO_IMOVEL')
   addres_comp_idx = columns.index('COMPLEMENTO')
   addres_neigh_idx = columns.index('NOME_BAIRRO')
+  id_idx = columns.index('ID_ATIV_ECON_ESTABELECIMENTO')
   
   points = []
 
@@ -124,7 +126,6 @@ def parse_csv(path) -> list[Point]:
     coords = match.group(1)
     point = coords.split(' ')
     x, y = transformer.transform(float(point[0]), float(point[1]))
-    # print(x, y)
     
     address = (f'{row[addres_desc_idx]} {row[addres_name_idx]}, {row[addres_number_idx]},'
                f'{' ' + row[addres_comp_idx] + ',' if row[addres_comp_idx] else ''} {row[addres_neigh_idx]}')
@@ -136,11 +137,21 @@ def parse_csv(path) -> list[Point]:
       has_license = False
     else:
       has_license = None
-      
-    info = Info(row[date_idx], address, row[name_idx], ficname, has_license)
+
+    id_ativ_econ_estabelecimento = row[id_idx]
+    info = Info(row[date_idx], address, row[name_idx], ficname, has_license, id_ativ_econ_estabelecimento)
     points.append(Point(info, x, y))
 
   return points
+
+def parse_bares_completos_csv(path):
+    import csv
+    bares_info = {}
+    with open(path, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            bares_info[row["ID"]] = row
+    return bares_info
 
 def main():
   points = parse_csv('dados.csv')

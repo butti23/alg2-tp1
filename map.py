@@ -5,8 +5,11 @@ import tp
 
 points = tp.parse_csv('dados.csv')
 tree = tp.KdTree(points)
-center_x, center_y = (-19.9062135,-43.9650108)
+center_x, center_y = (-19.9062135, -43.9650108)
 points = []
+
+# Carrega informações extras dos bares por ID
+bares_info = tp.parse_bares_completos_csv('bares.csv')
 
 def point_to_dict(p):
     return {
@@ -16,15 +19,36 @@ def point_to_dict(p):
         "addr": p.data.address
     }
 
-app = dash.Dash(__name__)
+def get_bar_extra_info(point):
+    # Tenta encontrar info extra pelo ID (ID_ATIV_ECON_ESTABELECIMENTO)
+    bar_id = getattr(point.data, "id_ativ_econ_estabelecimento", None)
+    info = bares_info.get(bar_id)
+    if info:
+        return f"""
+<b>{info['Nome']}</b><br>
+<a href="{info['Link Detalhes']}" target="_blank">Ver detalhes</a><br>
+<b>Prato:</b> {info['Nome Petisco']}<br>
+<b>Descrição:</b> {info['Descricao']}<br>
+<b>Endereço:</b> {info['Endereco']}<br>
+<img src="{info['Link Imagem']}" width="150">
+"""
+    else:
+        return point.data.name
 
 def make_markers(data):
     return [
-        dl.Marker(position=(p.y, p.x), children=dl.Tooltip(p.data.name))
+        dl.Marker(
+            position=(p.y, p.x),
+            children=dl.Tooltip(content=get_bar_extra_info(p), direction="top", permanent=False)
+        )
         for p in data
     ]
 
+app = dash.Dash(__name__)
+
 app.layout = html.Div([
+    html.H1("Buscador de bares e restaurantes BH"),
+    
     dl.Map(center=(center_x, center_y), zoom=13, children=[
         dl.TileLayer(),
         dl.LayerGroup(id="marker-layer", children=make_markers(points)),
@@ -62,7 +86,7 @@ app.layout = html.Div([
 )
 def filter_points(geojson):
     if not geojson or not geojson.get("features"):
-        return points, make_markers(points)
+        return [point_to_dict(p) for p in points], make_markers(points)
 
     coords = geojson["features"][0]["geometry"]["coordinates"][0]
     lats = [pt[1] for pt in coords]
@@ -70,7 +94,6 @@ def filter_points(geojson):
     lat_min, lat_max = min(lats), max(lats)
     lon_min, lon_max = min(lons), max(lons)
 
-    # Trocar filtro abaixo - consultar kdtree
     ll = tp.Point(None, lon_min, lat_min)
     ur = tp.Point(None, lon_max, lat_max)
     filtered = tree.search(tp.Rectangle(ll, ur))
@@ -78,4 +101,4 @@ def filter_points(geojson):
     return [point_to_dict(p) for p in filtered], make_markers(filtered)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
