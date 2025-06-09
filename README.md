@@ -25,7 +25,7 @@ Este projeto é uma aplicação web interativa para visualização, busca e filt
 └── README.md            # Este arquivo
 ```
 ## Links para acesso à aplicação web
-- https://butti23.github.io/alg2/
+- https://butti23.github.io/alg2-tp1/
 - https://alg2-tp1.onrender.com
 
 ## Caso queira executar localmente
