@@ -16,7 +16,8 @@ Este projeto é uma aplicação web interativa para visualização, busca e filt
 ├── kdtree.py            # Lógica de dados, estruturas e busca espacial
 ├── dados.csv            # Dados dos estabelecimentos (geolocalização, CNPJ, etc)
 ├── bares.csv            # Dados detalhados dos bares do Comida di Buteco
-├── output.csv           # (opcional) Saídas processadas
+├── output.csv           # Saída de scraper.ipynb
+├── index.html           # Página que contém a aplicação web
 ├── scraper.ipynb        # Notebook para coleta/processamento de dados
 ├── relatorio-alg2.pdf   # Relatório do trabalho
 ├── assets/
@@ -24,7 +25,7 @@ Este projeto é uma aplicação web interativa para visualização, busca e filt
 └── README.md            # Este arquivo
 ```
 
-## Como Executar
+## Caso queira executar localmente
 
 1. **Pré-requisitos:**
    - Python 3.10+
@@ -44,7 +45,7 @@ Acesse http://127.0.0.1:8050 no navegador.
 
 ## Explicação dos Principais Arquivos
 - map.py: Inicializa o Dash, carrega os dados, define o layout do mapa, tabela e callbacks para filtragem.
-- tp.py: Contém as classes Point, Rectangle, KdTree para busca espacial, além de funções para parsing dos CSVs.
+- kdtree.py: Contém as classes Point, Rectangle, KdTree para busca espacial, além de funções para parsing dos CSVs.
 - dados.csv: Lista de estabelecimentos com localização (projetada e convertida para latitude/longitude), nome, endereço, licença, etc.
 - bares.csv: Informações detalhadas dos bares participantes do Comida di Buteco, incluindo prato, descrição, imagem e link.
 
