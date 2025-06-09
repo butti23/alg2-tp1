@@ -50,7 +50,7 @@ Acesse http://127.0.0.1:8050 no navegador.
 - bares.csv: Informações detalhadas dos bares participantes do Comida di Buteco, incluindo prato, descrição, imagem e link.
 
 ## Como funciona a busca espacial?
-A busca dos estabelecimentos dentro de uma área selecionada no mapa é feita usando uma árvore KD (KdTree), implementada em tp.py. Isso permite filtrar rapidamente apenas os pontos dentro do retângulo desenhado pelo usuário.
+A busca dos estabelecimentos dentro de uma área selecionada no mapa é feita usando uma árvore KD (KdTree), implementada em kdtree.py. Isso permite filtrar rapidamente apenas os pontos dentro do retângulo desenhado pelo usuário.
 
 ## Customização
 Para alterar o estilo visual, edite custom.css.
